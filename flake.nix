@@ -1,19 +1,19 @@
 {
   description = "VSCode with a very specific set of extensions";
-
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
   };
-
-  outputs =
-    { self, nixpkgs }:
+  outputs = { self, nixpkgs }:
+    let
+      supportedSystems = [ "x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin" ];
+      forAllSystems = nixpkgs.lib.genAttrs supportedSystems;
+    in
     {
-      packages = builtins.mapAttrs (
-        system: pkgs:
+      packages = forAllSystems (system:
         let
           pkgs = import nixpkgs {
-            config.allowUnfree = true;
             inherit system;
+            config.allowUnfree = true;
           };
         in
         rec {
@@ -26,6 +26,6 @@
             ];
           };
         }
-      ) nixpkgs.legacyPackages;
+      );
     };
 }
