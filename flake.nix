@@ -7,20 +7,26 @@
 
   outputs = { self, nixpkgs }:
     let
-      allSystems = [ "x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin" ];
-      forAllSystems = nixpkgs.lib.genAttrs allSystems;
+      supportedSystems = [ "x86_64-linux" "x86_64-darwin" "aarch64-darwin" ];
+      unsupportedSystems = [ "aarch64-linux" ];
+      allSystems = supportedSystems ++ unsupportedSystems;
+
+      forAllSystems = f: nixpkgs.lib.genAttrs allSystems (system: f system);
+
+      nixpkgsFor = forAllSystems (system:
+        import nixpkgs {
+          inherit system;
+          config.allowUnfree = true;
+        }
+      );
     in
     {
       packages = forAllSystems (system:
         let
-          pkgs = import nixpkgs {
-            inherit system;
-            config.allowUnfree = true;
-          };
-          
-          supportedSystems = [ "x86_64-linux" "x86_64-darwin" "aarch64-darwin" ];
-          
-          vscodePackage = 
+          pkgs = nixpkgsFor.${system};
+        in
+        {
+          default =
             if (builtins.elem system supportedSystems) then
               pkgs.vscode-with-extensions.override {
                 vscodeExtensions = with pkgs.vscode-extensions; [
@@ -42,16 +48,13 @@
                 echo "echo 'VSCode is not supported on this platform'" > $out/bin/vscode
                 chmod +x $out/bin/vscode
               '';
-        in
-        {
-          default = vscodePackage;
         }
       );
 
       # Add a devShell for each system
       devShells = forAllSystems (system:
         let 
-          pkgs = nixpkgs.legacyPackages.${system};
+          pkgs = nixpkgsFor.${system};
         in 
         {
           default = pkgs.mkShell {
