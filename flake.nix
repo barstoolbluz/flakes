@@ -19,8 +19,7 @@
           };
         in
         {
-          default = self.packages.${system}.vscode-with-extensions;
-          vscode-with-extensions = pkgs.vscode-with-extensions.override {
+          default = pkgs.vscode-with-extensions.override {
             vscodeExtensions = with pkgs.vscode-extensions; [
               bbenoist.nix
               ms-python.python
@@ -36,12 +35,13 @@
           };
         }
       );
+
       # Add a devShell for each supported system
       devShells = forAllSystems (system:
         let pkgs = nixpkgs.legacyPackages.${system};
         in {
           default = pkgs.mkShell {
-            buildInputs = [ self.packages.${system}.vscode-with-extensions ];
+            buildInputs = [ self.packages.${system}.default ];
           };
         }
       );
