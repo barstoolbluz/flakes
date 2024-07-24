@@ -36,7 +36,12 @@
                   }
                 ];
               }
-            else null;
+            else
+              pkgs.runCommand "dummy-vscode" {} ''
+                mkdir -p $out/bin
+                echo "echo 'VSCode is not supported on this platform'" > $out/bin/vscode
+                chmod +x $out/bin/vscode
+              '';
         in
         {
           default = vscodePackage;
@@ -47,11 +52,10 @@
       devShells = forAllSystems (system:
         let 
           pkgs = nixpkgs.legacyPackages.${system};
-          vscodePackage = self.packages.${system}.default;
         in 
         {
           default = pkgs.mkShell {
-            buildInputs = if vscodePackage != null then [ vscodePackage ] else [];
+            buildInputs = [ self.packages.${system}.default ];
           };
         }
       );
