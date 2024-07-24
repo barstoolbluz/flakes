@@ -5,35 +5,30 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
   };
 
-  outputs = { self, nixpkgs, ... }@inputs:
+  outputs = { self, nixpkgs }:
     let
-      systems = [ "x86_64-linux" "aarch64-linux" ];
+      supportedSystems = [ "x86_64-linux" "x86_64-darwin" "aarch64-linux" "aarch64-darwin" ];
+      forAllSystems = nixpkgs.lib.genAttrs supportedSystems;
     in
     {
-      packages = builtins.genAttrs systems (system:
+      packages = forAllSystems (system:
         let
           pkgs = import nixpkgs {
             system = system;
             config.allowUnfree = true;
           };
+          vscodeExtensions = [
+            pkgs.vscode-extensions.bbenoist.nix
+            pkgs.vscode-extensions.ms-python.python
+            pkgs.vscode-extensions.ms-azuretools.vscode-docker
+          ];
+          vscodeWithExtensions = pkgs.vscode-with-extensions.override {
+            inherit vscodeExtensions;
+          };
         in
         {
-          defaultPackage = pkgs.vscode-with-extensions.override {
-            vscodeExtensions = with pkgs.vscode-extensions; [
-              bbenoist.nix
-              ms-python.python
-              ms-azuretools.vscode-docker
-            ];
-          };
+          default = vscodeWithExtensions;
         }
       );
-
-      defaultPackage = pkgs.vscode-with-extensions.override {
-        vscodeExtensions = with pkgs.vscode-extensions; [
-          bbenoist.nix
-          ms-python.python
-          ms-azuretools.vscode-docker
-        ];
-      };
     };
 }
