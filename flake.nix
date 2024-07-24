@@ -16,16 +16,20 @@
             config.allowUnfree = true;
           };
         in
-        rec {
-          default = vscode-with-extensions;
-          vscode-with-extensions = pkgs.vscode-with-extensions.override {
-            vscodeExtensions = with pkgs.vscode-extensions; [
-              bbenoist.nix
-              ms-python.python
-              ms-azuretools.vscode-docker
-            ];
-          };
-        }
+        if pkgs.stdenv.hostPlatform.isLinux && pkgs.stdenv.hostPlatform.isAarch64 then
+          # Return an empty set for aarch64-linux to avoid build failures
+          {}
+        else
+          rec {
+            default = vscode-with-extensions;
+            vscode-with-extensions = pkgs.vscode-with-extensions.override {
+              vscodeExtensions = with pkgs.vscode-extensions; [
+                bbenoist.nix
+                ms-python.python
+                ms-azuretools.vscode-docker
+              ];
+            };
+          }
       );
     };
 }
